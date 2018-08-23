@@ -1,0 +1,21 @@
+#!/bin/bash
+# give bsub some options...
+# name of the job
+#BSUB -J {jobname}
+# write output and error to these files
+#BSUB -o output.%J
+#BSUB -e errors.%J
+# number and configuration of CPUs to use
+#BSUB -n 1
+#BSUB -R "rusage[mem=1] span[ptile=8] select[type==any]"
+# don't forget to specify the right queue :)
+#BSUB -q phase7_gpu
+
+# setup environment and call mdrun_mpi...
+source /home/model/MD-SOFTWARE/model_md.bashrc
+
+{precommands}
+{commands}
+{postcommands}
+
+bsub < {next}
