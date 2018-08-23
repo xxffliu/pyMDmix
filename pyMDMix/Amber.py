@@ -75,11 +75,12 @@ class Leaper(object):
         Thus we use a fake command to detect the last line before EOF.
         """
         self._in.write(command+'\n')
+        #print command
         self._in.write('lastCommandOut\n')
         out = []
         while 1:
             line = self._out.readline().strip()
-            if 'ERROR: syntax error' in line: break
+            if 'ERROR: syntax error' in line or '!ABORTING.' in line: break
             if line: out.append(line)
         return out
 
@@ -132,7 +133,7 @@ class AmberCreateSystem(object):
             if 'leaprc' in ff: self.leap.command("source %s"%ff)
             elif 'frcmod' in ff: self.leap.command("loadamberparams %s"%ff)
             self.log.debug("Added FF: %s"%ff)
-#        if self.project: self.loadOff(self.project.amberOFF)
+        #if self.project: self.loadOff(self.project.amberOFF)
 
     def checkFF(self, ffname):
         """
@@ -180,7 +181,9 @@ class AmberCreateSystem(object):
             return False
 
     def loadOff(self, objectFile):
-        if not self.leap: self.initLeap()
+        if not self.leap:
+		    self.log.debug("Leaper not initialized")
+		    self.initLeap()
         self.leap.command("loadOff %s"%objectFile)
         self.amberOFF = objectFile
         self.log.debug("Loaded off file %s into Leap"%objectFile)
@@ -290,7 +293,7 @@ class AmberCreateSystem(object):
         
         self.log.debug("Neutralize ionic box OK")
         return True
-    
+
     def __saveTempOff(self):
         tmp = tempfile.mktemp(prefix='solv')
         self.solvent.writeOff(tmp)
@@ -307,7 +310,9 @@ class AmberCreateSystem(object):
 
         tmpOff = self.__saveTempOff()
         if not leapHandle: 
-            if not self.leap: self.initLeap()
+            if not self.leap:
+                self.log.debug("Leaper not initialized")
+                self.initLeap()
             leapHandle = self.leap
             
         leapHandle.command('loadOff %s'%tmpOff)
@@ -616,37 +621,7 @@ class AmberCheck(object):
         else:
             if self.warn: self.log.warn("Checking replica MD failed. Some steps could not pass the check: %s"%stepsdone)
             return False
-    
-    def getSimVolume(self, replica=False, step=False, boxextension=False):
-        """
-        Fetch simulation volume information from restart files. 
-        
-        :arg Replica replica: Replica to study. If false, will take replica loaded in initalization.
-        :arg int step: Step to fetch volume for. If False, will identify last completed production step and use that one.
-        :arg str boxextension: Extension for the output file containing the restart information. DEFAULT: rst.
-        
-        :return float Volume: Simulation volume.
-        """
-        replica = replica or self.replica
-        if not replica: raise AmberCheckError, "Replica not assigned."
-        
-        boxextension = boxextension or 'rst'
-        
-        # Work on step. If not given, fetch last completed production step.
-        step = step or replica.lastCompletedProductionStep()
-        
-        # Fetch rst file and read last line to get box side length and angle
-        fname = replica.mdoutfiletemplate.format(step=step, extension=boxextension)
-        fname = osp.join(replica.path, replica.mdfolder, fname)
-        if not os.path.exists(fname):
-            self.log.error("No file found with name %s to fetch box volume in DG0 penalty calculation. Returning no penalty..."%fname)
-            return False
-        box = map(float, open(fname,'r').readlines()[-1].strip().split())
-        vol = box[0]*box[1]*box[2]
-        
-        if box[3] != 90.0: vol *= 0.77 # orthorombic volume correction
-        return vol
-        
+
 
 class AmberWriter(object):
     "Write input files to run the simulations with AMBER for each replica"
@@ -937,6 +912,8 @@ class AmberWriter(object):
         
         # Write md input, 1ns each file and run under NVT conditions
         substDict['nsteps'] = replica.prod_steps # 1ns each file
+        if replica.hasRestraints:
+            substDict['maskfield'] = '' # remove the restraints in the production stage 
         outf=replica.mdfolder+os.sep+'md.in'
         self.log.debug("Writing: %s"%outf)
         if replica.production_ensemble == 'NPT': prodfile = self.cpmd
@@ -1106,7 +1083,7 @@ class Test(BT.BiskitTest):
     """Test"""
     def test_tleap(self):
         """Test correct operation of tLeap"""
-        leap = Leaper(extraff='leaprc.ff99SB')
+        leap = Leaper(extraff=['leaprc.protein.ff14SB'])
         leap.command("savepdb LEU tmpleu.pdb")
         leap.close()
         self.testdir = 'tmpleu.pdb'

@@ -49,6 +49,15 @@ import tools as T
 import settings as S
 from Structures import FileLock
 
+# Added by Xiaofeng on 01/12/2016
+# Using Parmed to repartitioning hydrogen masses to 3.024 daltons in the topology file. Not changing water hydrogen masses.
+try:
+    from parmed.tools import HMassRepartition
+    from parmed.amber import AmberParm
+except ImportError:
+    raise ImportError("Cannot import parmed.")
+#
+
 class SystemError(Exception):
     pass
 
@@ -243,6 +252,13 @@ class System(object):
         self.__initCreate()
         self.create.solvateOrganic(self.unitName, solvent=solvent)  # It will work even if its water
         self.create.saveAmberParm(self.unitName, prmtop, prmcrd)
+        # Added by Xiaofeng 01/12/2016
+        parm = AmberParm(prmtop)
+        action = HMassRepartition(parm)
+        action.execute()
+        log.info(str(action))
+        parm.write_parm(prmtop)
+        #
         self.__cleanCreate()
 
         s = SolvatedSystem(name, prmtop, prmcrd, solvent=solvent.name, ref=self.ref)

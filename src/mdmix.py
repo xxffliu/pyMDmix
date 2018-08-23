@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/home/u047856/anaconda/bin/python
 ##  ------------------------ pyMDMix -----------------------------------
 ##                  http://mdmix.sourceforge.net
 ##  --------------------------------------------------------------------
@@ -65,7 +65,7 @@ def createParser():
     add_parser.add_argument("-sys", action="store", dest="sysname", help="REPLICAS action: When creating new replicas, specify the system name which should be prepared. System name should exist in the project. If not given, only one system should be present in the project.")
    
     #REMOVE
-    remove_parser = subparsers.add_parser('remove', help="Remove groups from project. To remove systems or replicas, simply remove the folders or system files from the project folder.")
+    remove_parser = subparsers.add_parser('remove', help="Remove groups from project. To remove systems or replicas, simply remove the forlders or system files from the project folder.")
     remove_parser.add_argument("action", choices=('group'), help="Remove group.")
     remove_parser.add_argument("-gn", action="store", dest="groupname", help="Name of the group to remove. Groupname must exists in project.", required=True)
    
@@ -115,7 +115,8 @@ def createParser():
     residence_parser.add_argument("--hpid", "-id", action="store", type=int, dest="hpid", help="Hotspot ID in HPFILE to define region to study.")
     residence_parser.add_argument("--center", "-ce", nargs='+', dest="center", help="Sphere center to define region to study. Give a space separated 3 float list.")
     residence_parser.add_argument("--tol", "-t", default=0.5,type=float,dest="tolerance", help="Tolerance in angstroms around sphere center or hotspot coordinates to consider as occupied space. (default: 0.5)")
-    
+    # added by Xiaofeng Liu 17/08/2016 to take fragment trackResName from input, otherwise any residue falling into the hotspot will be tracked
+    residence_parser.add_argument("--track", "-tr", nargs='+', dest="track", help="Residue names to track if they are inside the hotspot. ATTENTION: If no list is given. Then all residue names can be occupying the hotspot (even protein residues).")
 
     # ANALYSYS: ALIGN
 #    anl_commands = anl_parser.add_subparsers(help='Analysis commands', dest='anl_command')
@@ -535,6 +536,7 @@ def main():
             center = parserargs.center
             tolerance = parserargs.tolerance
             hotspot = False
+	    trackResName = parserargs.track
 
             if hotspotfile and hselection:
                 # Read hotspots from pickle file and
@@ -554,7 +556,7 @@ def main():
                 anal = pyMDMix.Analysis.ActionsManager(ncpus=ncpus)
                 anal.addReplicas(replicas)
                 anal.addActions('Residence')
-                anal.prepareRun(hotspot=hotspot, spherecenter=center, tolerance=tolerance, stepselection=nanosel)
+                anal.prepareRun(hotspot=hotspot, spherecenter=center, tolerance=tolerance, stepselection=nanosel, trackResNames=list(trackResName))
                 anal.run(stepselection=nanosel, framestep=step)
                 anal.processResults()
             print "DONE"
@@ -572,7 +574,7 @@ def main():
 
                 from pyMDMix.Energy import EnergyConversion
                 econv = EnergyConversion()
-                econv.convert(replicas, probelist=probelist, average=avg, dg0correct=dg0,
+                econv.convert(replicas, probelsit=probelist, average=avg, dg0correct=dg0,
                                     inprefix=inprefix, outprefix=outprefix, nsnaps=nsnaps, stepselection=nanosel)
 
         # HOTSPOTS SUBPARSER UNDER ANALYSIS

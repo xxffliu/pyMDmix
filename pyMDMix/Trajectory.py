@@ -63,8 +63,14 @@ class TrajFile(object):
             self.nextFunction = self.traj.nextFrame
         elif self.extension in ('nc','netcdf'):
             try:
-                import scipy.io.netcdf as ncdf
-                self.traj = ncdf.NetCDFFile(self.fname,'r').variables['coordinates']
+                # Replace Scientific-python NetCDF with the one from MDTraj
+                # Scientific-python does not work
+                #import Scientific.IO.NetCDF as ncdf
+                #self.traj = ncdf.NetCDFFile(self.fname,'r').variables['coordinates']
+                #self.nextFunction = self.returnFrameFromNetcdf
+                from mdtraj.formats import NetCDFTrajectoryFile as ncdf
+                coordinates, time, cell_lengths, cell_angles = ncdf(self.fname, mode = 'r').read()
+                self.traj = coordinates
                 self.nextFunction = self.returnFrameFromNetcdf
             except ImportError:
                 raise TrajFileError, "Can't read NetCDF trajectory"

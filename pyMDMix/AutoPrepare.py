@@ -614,7 +614,9 @@ class AmberPDBCleaner(bi.AmberParmBuilder):
 
             ss = self._AmberParmBuilder__ssBonds( m, cutoff=4. )
             self._AmberParmBuilder__cys2cyx( m, ss )
-            self.leap_ss  = self._AmberParmBuilder__fLines( self.ss_bond, ss )
+            # Corrected by Xiaofeng on 02/12/2016
+            self.leap_ss  = self._AmberParmBuilder__fLines( self.ss_bond, ss ).replace('p', 'sys').split("\n")
+            #
             if self.verbose:
                 self.log.add('Found %i disulfide bonds: %s' % (len(ss),str(ss)))
 

@@ -6,12 +6,12 @@ import pyMDMix.OpenMMUtils as mdm
 
 import sys
 
-from chemistry.openmm.reporters import EnergyMinimizerReporter, RestartReporter, MdcrdReporter
+from parmed.openmm.reporters import EnergyMinimizerReporter, RestartReporter, MdcrdReporter
 
 platform = mm.Platform_getPlatformByName("CUDA")
 platformProperties = {}
 platformProperties['CudaPrecision'] = 'mixed'
-platformProperties['CudaDeviceIndex'] = '0'
+#platformProperties['CudaDeviceIndex'] = '0'
 
 
 prmtopName = sys.argv[1]
@@ -21,7 +21,7 @@ rst7Name   = sys.argv[3]
 prmtop = app.AmberPrmtopFile(prmtopName)
 inpcrd = app.AmberInpcrdFile(inpcrdName)
 
-system = prmtop.createSystem(nonbondedMethod=app.PME, nonbondedCutoff=9*u.angstrom)
+system = prmtop.createSystem(nonbondedMethod=app.PME, nonbondedCutoff=9*u.angstrom, hydrogenMass=4*u.amu, rigidWater=True)
 $maskfield
 
 # Not really needed

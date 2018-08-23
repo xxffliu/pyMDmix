@@ -5,12 +5,12 @@ import pyMDMix.OpenMMUtils as mdm
 
 import sys
 
-from chemistry.openmm.reporters import RestartReporter, NetCDFReporter
+from parmed.openmm.reporters import RestartReporter, NetCDFReporter
 
 platform = mm.Platform_getPlatformByName("CUDA")
 platformProperties = {}
 platformProperties['CudaPrecision'] = 'mixed'
-platformProperties['CudaDeviceIndex'] = '0'
+#platformProperties['CudaDeviceIndex'] = '0'
 
 
 runName  = sys.argv[0].split(".")[0]
@@ -23,7 +23,7 @@ logName    = sys.argv[5]
 prmtop = app.AmberPrmtopFile(prmtopName)
 inpcrd = app.AmberInpcrdFile(inpcrdName)
 
-system = prmtop.createSystem(nonbondedMethod=app.PME, nonbondedCutoff=9*u.angstrom, constraints=app.HBonds)
+system = prmtop.createSystem(nonbondedMethod=app.PME, nonbondedCutoff=9*u.angstrom, hydrogenMass=4*u.amu, constraints=app.AllBonds, rigidWater=True)
 $maskfield
 
 print "Heating system under NVT"
